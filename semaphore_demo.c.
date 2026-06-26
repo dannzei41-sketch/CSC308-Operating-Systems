@@ -1,0 +1,42 @@
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+#define NUM_THREADS 5
+
+int counter = 0;
+sem_t semaphore;
+
+void *increment(void *arg) {
+    sem_wait(&semaphore);
+
+    printf("Thread %ld entered critical section\n", (long)arg);
+    counter++;
+    sleep(1);
+    printf("Counter = %d\n", counter);
+
+    sem_post(&semaphore);
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[NUM_THREADS];
+
+    // Allow up to 3 threads to enter simultaneously
+    sem_init(&semaphore, 0, 3);
+
+    for (long i = 0; i < NUM_THREADS; i++) {
+        pthread_create(&threads[i], NULL, increment, (void *)i);
+    }
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    sem_destroy(&semaphore);
+
+    printf("Final Counter = %d\n", counter);
+
+    return 0;
+}
